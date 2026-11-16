@@ -1,6 +1,6 @@
 import type { HeadsQueryParams } from '../api/heads-api';
 
-export const DEFAULTS: Required<Omit<HeadsQueryParams, 'searchTerm' | 'type'>> = {
+export const DEFAULTS: Required<Omit<HeadsQueryParams, 'searchTerm' | 'type' | 'countryCode'>> = {
   page: 1,
   pageSize: 10,
   sortBy: 'lastName',
@@ -20,6 +20,7 @@ export function parseHeadsUrlParams(searchParams: URLSearchParams): HeadsQueryPa
   const sortByStr = searchParams.get('sortBy');
   const sortOrderStr = searchParams.get('sortOrder');
   const type = searchParams.get('type');
+  const countryCode = searchParams.get('countryCode');
 
   let page = DEFAULTS.page;
   if (pageStr) {
@@ -32,7 +33,7 @@ export function parseHeadsUrlParams(searchParams: URLSearchParams): HeadsQueryPa
   let pageSize = DEFAULTS.pageSize;
   if (pageSizeStr) {
     const val = parseInt(pageSizeStr, 10);
-    if (!isNaN(val) && val >= 1 && val <= 100) {
+    if (!isNaN(val) && val >= 1 && val <= 1000) {
       pageSize = val;
     }
   }
@@ -53,7 +54,8 @@ export function parseHeadsUrlParams(searchParams: URLSearchParams): HeadsQueryPa
     searchTerm: search?.trim() || undefined,
     sortBy,
     sortOrder,
-    type: type?.trim() || 'customer'
+    type: type?.trim() || 'customer',
+    countryCode: countryCode?.trim() || undefined
   };
 }
 
@@ -80,6 +82,9 @@ export function serializeHeadsUrlParams(params: HeadsQueryParams): URLSearchPara
   }
   if (params.type) {
     searchParams.set('type', params.type);
+  }
+  if (params.countryCode?.trim()) {
+    searchParams.set('countryCode', params.countryCode.trim());
   }
 
   return searchParams;

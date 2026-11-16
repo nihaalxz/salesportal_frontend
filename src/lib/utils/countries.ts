@@ -199,3 +199,20 @@ export const countries: Country[] = [
   { name: 'Zambia', nationality: 'Zambian', dialCode: '+260', flag: '🇿🇲' },
   { name: 'Zimbabwe', nationality: 'Zimbabwean', dialCode: '+263', flag: '🇿🇼' }
 ];
+
+export const gccCountryNames = [
+  'Bahrain',
+  'Saudi Arabia',
+  'United Arab Emirates',
+  'Kuwait',
+  'Qatar',
+  'Oman'
+] as const;
+
+export const phoneCodeCountries: Country[] = [
+  ...gccCountryNames.map(name => countries.find(c => c.name === name)!),
+  ...countries
+    .filter(c => !gccCountryNames.includes(c.name as any))
+    .sort((a, b) => a.name.localeCompare(b.name))
+];
+

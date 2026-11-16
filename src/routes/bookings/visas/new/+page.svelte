@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { customerAccountStore } from '$lib/features/customer-accounts/stores/customer-account-store.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import HeadSelect from '$lib/components/HeadSelect.svelte';
   import CustomerAccountWidget from '$lib/features/customer-accounts/components/CustomerAccountWidget.svelte';
@@ -41,7 +42,7 @@
     emailId: string;
     passportNo: string;
     iqamaHotelNo: string;
-    amount: number;
+    amount: number | '';
     expectedSupplierCost: number;
     isInhouse: boolean;
     passportFile?: File | null;
@@ -85,7 +86,7 @@
       emailId: '',
       passportNo: '',
       iqamaHotelNo: '',
-      amount: 0,
+      amount: '',
       expectedSupplierCost: 0,
       isInhouse: true,
       passportFile: null,
@@ -109,7 +110,7 @@
   onMount(async () => {
     loadingHeads = true;
     try {
-      headsList = await lookupHeadsApi('', 100, 'customer');
+      headsList = await lookupHeadsApi('', 1000, 'customer');
     } catch (err) {
       console.error('Failed to load active customer heads:', err);
     } finally {
@@ -118,7 +119,7 @@
 
     loadingAgents = true;
     try {
-      agentsList = await lookupHeadsApi('', 100, 'agent');
+      agentsList = await lookupHeadsApi('', 1000, 'agent');
     } catch (err) {
       console.error('Failed to load active agents:', err);
     } finally {
@@ -169,9 +170,9 @@
   }
 
   // Reactive calculations
-  let totalAmount = $derived(applicants.reduce((sum, a) => sum + a.amount, 0));
+  let totalAmount = $derived(applicants.reduce((sum, a) => sum + (Number(a.amount) || 0), 0));
   let totalSupplierCost = $derived(applicants.reduce((sum, a) => sum + (a.isInhouse ? 0 : a.expectedSupplierCost), 0));
-  let totalProfit = $derived(applicants.reduce((sum, a) => sum + (a.isInhouse ? 0 : Math.max(0, a.amount - a.expectedSupplierCost)), 0));
+  let totalProfit = $derived(applicants.reduce((sum, a) => sum + (a.isInhouse ? 0 : Math.max(0, (Number(a.amount) || 0) - a.expectedSupplierCost)), 0));
   let anyExternal = $derived(applicants.some(a => !a.isInhouse));
 
   function selectHead(head: HeadLookup) {
@@ -189,7 +190,7 @@
       emailId: '',
       passportNo: '',
       iqamaHotelNo: '',
-      amount: 0,
+      amount: '',
       expectedSupplierCost: 0,
       isInhouse: true,
       passportFile: null,
@@ -252,7 +253,7 @@
         if (a.contactNo.trim() && !/^\d+$/.test(a.contactNo.trim())) {
           errors[`applicants_${i}_contactNo`] = [`Contact number for Applicant ${i + 1} must contain digits only (0-9).`];
         }
-        if (a.amount <= 0) {
+        if (a.amount === '' || Number(a.amount) <= 0) {
           errors[`applicants_${i}_amount`] = [`Amount for Applicant ${i + 1} must be positive.`];
         }
         if (!a.passportFile) {
@@ -288,7 +289,7 @@
         passportCopy: a.passportFile ? await fileToBase64(a.passportFile) : null,
         iqamaHotelNo: a.iqamaHotelFile ? await fileToBase64(a.iqamaHotelFile) : (a.iqamaHotelNo || null),
         bankDoc: a.bankStatementFile ? await fileToBase64(a.bankStatementFile) : null,
-        amount: a.amount,
+        amount: Number(a.amount) || 0,
         expectedSupplierCost: a.isInhouse ? 0 : a.expectedSupplierCost,
         isInhouse: a.isInhouse
       }))
@@ -316,10 +317,40 @@
     try {
       const response = await createVisaBooking(request, getFreshIdempotencyKey());
       const docNo = response.documentNumber;
-      successMsg = `Visa application ${docNo} successfully created!`;
-      setTimeout(() => {
-        goto('/bookings/visas');
-      }, 1000);
+      if (headId) customerAccountStore.invalidate(headId);
+      successMsg = `Visa application ${docNo} successfully created! Ready for next entry.`;
+
+      // Reset visa fields while preserving customer head selection
+      countryId = null;
+      visaPackId = null;
+      paymentMethod = 'credit';
+      bankId = null;
+      bankName = '';
+      supplierId = null;
+      applicants = [
+        {
+          prefix: 'Mr.',
+          fName: '',
+          lName: '',
+          dob: '',
+          nationality: '',
+          contactNo: '',
+          emailId: '',
+          passportNo: '',
+          iqamaHotelNo: '',
+          amount: '',
+          expectedSupplierCost: 0,
+          isInhouse: true,
+          passportFile: null,
+          bankStatementFile: null,
+          iqamaHotelFile: null
+        }
+      ];
+      validationErrors = {};
+      errorMsg = '';
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err: any) {
       if (err.status === 422 || err.status === 400) {
         if (err.errors) {
@@ -663,6 +694,7 @@
                     type="number"
                     step="0.001"
                     min="0"
+                    placeholder="0.000"
                     bind:value={applicant.amount}
                     required
                   />
@@ -719,35 +751,6 @@
                     />
                   </div>
                 </div>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-4 bg-muted/20 p-3 rounded">
-                <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                  <input type="checkbox" bind:checked={applicant.isInhouse} class="accent-primary" />
-                  <span>In-house Sourced</span>
-                </label>
-
-                {#if !applicant.isInhouse}
-                  <div class="flex items-center gap-3 flex-1 min-w-[200px]">
-                    <div class="w-full space-y-1">
-                      <Input 
-                        id="cost_{index}"
-                        type="number"
-                        step="0.001"
-                        placeholder="Expected supplier cost (BHD)"
-                        bind:value={applicant.expectedSupplierCost}
-                        required
-                      />
-                      {#if validationErrors[`applicants_${index}_cost`]}
-                        <p class="text-[10px] text-destructive">{validationErrors[`applicants_${index}_cost`][0]}</p>
-                      {/if}
-                    </div>
-                  </div>
-
-                  <div class="text-xs text-green-600 font-bold ml-auto">
-                    Profit: BHD {(applicant.amount - applicant.expectedSupplierCost).toFixed(3)}
-                  </div>
-                {/if}
               </div>
             </div>
           {/each}

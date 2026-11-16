@@ -80,7 +80,7 @@
         <span class="text-[10px] font-medium tracking-tight">Leads</span>
       </a>
 
-      <!-- 4. Receipts -->
+      <!-- 4. Receipts history -->
       <a
         href="/receipts"
         class={cn(
@@ -89,10 +89,10 @@
             ? "text-amber-500 dark:text-amber-400 font-semibold"
             : "text-muted-foreground hover:text-foreground"
         )}
-        aria-label="Receipts"
+        aria-label="Receipts history"
       >
         <Receipt class="h-5.5 w-5.5 shrink-0" />
-        <span class="text-[10px] font-medium tracking-tight">Receipts</span>
+        <span class="text-[10px] font-medium tracking-tight">Receipts history</span>
       </a>
 
       <!-- 5. Bookings -->

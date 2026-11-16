@@ -39,7 +39,7 @@
   let totalCount = $state(0);
   let totalPages = $state(1);
   let page = $state(1);
-  const pageSize = 20;
+  let pageSize = $state(20);
   let statusFilter = $state('');
   let searchTerm = $state('');
   let searchInput = $state('');
@@ -210,7 +210,7 @@
     { value: 'FlightBooking', label: 'Flight Booking' },
     { value: 'HotelBooking', label: 'Hotel Booking' },
     { value: 'VisaApplication', label: 'Visa Application' },
-    { value: 'VfsAppointment', label: 'VFS Appointment' },
+    { value: 'VfsAppointment', label: 'VFS Service' },
     { value: 'HolidayPackage', label: 'Holiday Package' },
     { value: 'Transportation', label: 'Transportation' },
     { value: 'OtherService', label: 'Other Service' }
@@ -434,19 +434,41 @@
         </div>
       </div>
 
-      {#if totalPages > 1}
-        <div class="flex items-center justify-between pt-2">
-          <span class="text-xs text-muted-foreground">
+      {#if totalCount > 0}
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border mt-3 text-xs">
+          <span class="text-muted-foreground">
             {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
           </span>
-          <div class="flex items-center gap-1">
-            <Button size="sm" variant="outline" class="h-7 w-7 p-0" disabled={page <= 1} onclick={() => { page--; load(); }}>
-              <ChevronLeft class="h-4 w-4" />
-            </Button>
-            <span class="text-xs px-2 font-medium">{page} / {totalPages}</span>
-            <Button size="sm" variant="outline" class="h-7 w-7 p-0" disabled={page >= totalPages} onclick={() => { page++; load(); }}>
-              <ChevronRight class="h-4 w-4" />
-            </Button>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+              <select
+                value={pageSize}
+                onchange={(e) => {
+                  pageSize = parseInt((e.target as HTMLSelectElement).value, 10);
+                  page = 1;
+                  load();
+                }}
+                class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+                <option value={500}>500</option>
+                <option value={1000}>1000 (All)</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-1">
+              <Button size="sm" variant="outline" class="h-7 w-7 p-0" disabled={page <= 1} onclick={() => { page--; load(); }}>
+                <ChevronLeft class="h-4 w-4" />
+              </Button>
+              <span class="text-xs px-2 font-medium">{page} / {totalPages}</span>
+              <Button size="sm" variant="outline" class="h-7 w-7 p-0" disabled={page >= totalPages} onclick={() => { page++; load(); }}>
+                <ChevronRight class="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       {/if}

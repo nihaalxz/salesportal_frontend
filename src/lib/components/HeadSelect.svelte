@@ -54,10 +54,11 @@
     heads.filter(h => {
       const q = searchQuery.toLowerCase().trim();
       if (!q) return true;
+      const tokens = q.split(/\s+/).filter(Boolean);
       const fullName = `${h.firstName || ''} ${h.lastName || ''}`.toLowerCase();
       const mobile = (h.mobileNo || '').toLowerCase();
       const company = (h.companyName || '').toLowerCase();
-      return fullName.includes(q) || mobile.includes(q) || company.includes(q);
+      return tokens.every(tok => fullName.includes(tok) || mobile.includes(tok) || company.includes(tok));
     })
   );
 

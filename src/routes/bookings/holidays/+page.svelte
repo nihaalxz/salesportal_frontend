@@ -24,6 +24,7 @@
 
   // Reactively bind query parameters from URL state
   let currentPage = $derived(Number(page.url.searchParams.get('page') || '1'));
+  let pageSize = $derived(Number(page.url.searchParams.get('pageSize') || '10'));
   let paymentStatus = $derived(page.url.searchParams.get('paymentStatus') || '');
   let processingStatus = $derived(page.url.searchParams.get('processingStatus') || '');
   let searchTerm = $derived(page.url.searchParams.get('searchTerm') || page.url.searchParams.get('search') || '');
@@ -67,7 +68,7 @@
     try {
       const response = await getHolidayPackages({
         page: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
         paymentStatus: paymentStatus || undefined,
         processingStatus: processingStatus || undefined,
         searchTerm: searchTerm || undefined
@@ -110,8 +111,8 @@
         url.searchParams.set(key, String(val));
       }
     });
-    // Reset page to 1 on filter changes
-    if (!newParams.page) {
+    // Reset page to 1 on filter changes unless page was specified
+    if (!('page' in newParams)) {
       url.searchParams.set('page', '1');
     }
     goto(url.toString(), { keepFocus: true, noScroll: true });
@@ -249,7 +250,6 @@
               <th scope="col" class="px-6 py-4">Country</th>
               <th scope="col" class="px-6 py-4">Duration</th>
               <th scope="col" class="px-6 py-4">Amount</th>
-              <th scope="col" class="px-6 py-4">Payment</th>
               <th scope="col" class="px-6 py-4">Status</th>
               <th scope="col" class="px-6 py-4 text-right">Actions</th>
             </tr>
@@ -306,11 +306,6 @@
                   <MoneyDisplay amount={booking.payableAmount} />
                 </td>
                 
-                <!-- Payment Status -->
-                <td class="px-6 py-4">
-                  <StatusBadge status={booking.paymentStatus} />
-                </td>
-                
                 <!-- Processing Status -->
                 <td class="px-6 py-4">
                   <StatusBadge status={booking.processingStatus} />
@@ -335,37 +330,56 @@
       </div>
 
       <!-- Pagination Footer -->
-      <div class="px-6 py-4 border-t border-border flex items-center justify-between gap-4 bg-muted/10 text-xs">
+      <div class="px-6 py-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10 text-xs">
         <span class="text-muted-foreground">
           Showing <strong>{data.items.length}</strong> of <strong>{data.totalCount}</strong> holiday packages
         </span>
         
-        <div class="flex items-center gap-2">
-          <Button 
-            onclick={() => updateFilters({ page: currentPage - 1 })}
-            disabled={currentPage <= 1}
-            variant="outline" 
-            size="icon" 
-            class="h-8 w-8"
-            aria-label="Previous Page"
-          >
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
-          
-          <span class="font-medium text-foreground px-2">
-            Page {currentPage} of {data.totalPages}
-          </span>
-          
-          <Button 
-            onclick={() => updateFilters({ page: currentPage + 1 })}
-            disabled={currentPage >= data.totalPages}
-            variant="outline" 
-            size="icon" 
-            class="h-8 w-8"
-            aria-label="Next Page"
-          >
-            <ChevronRight class="h-4 w-4" />
-          </Button>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+            <select
+              value={pageSize}
+              onchange={(e) => updateFilters({ pageSize: (e.target as HTMLSelectElement).value, page: 1 })}
+              class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+              <option value={500}>500</option>
+              <option value={1000}>1000 (All)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <Button 
+              onclick={() => updateFilters({ page: currentPage - 1 })}
+              disabled={currentPage <= 1}
+              variant="outline" 
+              size="icon" 
+              class="h-8 w-8"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </Button>
+            
+            <span class="font-medium text-foreground px-2">
+              Page {currentPage} of {data.totalPages}
+            </span>
+            
+            <Button 
+              onclick={() => updateFilters({ page: currentPage + 1 })}
+              disabled={currentPage >= data.totalPages}
+              variant="outline" 
+              size="icon" 
+              class="h-8 w-8"
+              aria-label="Next Page"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

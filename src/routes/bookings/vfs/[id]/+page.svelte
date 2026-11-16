@@ -95,7 +95,7 @@
   }
 </script>
 
-<PageHeader title={booking ? `VFS Appointment ${booking.documentNumber}` : 'VFS Appointment Details'} description="Review VFS schedule, documents, and payment status.">
+<PageHeader title={booking ? `VFS Service ${booking.documentNumber}` : 'VFS Service Details'} description="Review VFS schedule, documents, and payment status.">
   <Button onclick={() => goto('/bookings/vfs')} variant="outline" size="sm" class="gap-1.5">
     <ChevronLeft class="h-4 w-4" />
     <span>Back to List</span>

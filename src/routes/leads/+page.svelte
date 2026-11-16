@@ -63,7 +63,7 @@
     'Flights',
     'Visa Services',
     'Holiday Packages',
-    'VFS Appointment',
+    'VFS Service',
     'Hotel Booking',
     'Transportation',
     'Other Services'
@@ -144,6 +144,13 @@
   function handlePageChange(newPage: number) {
     const currentParams = new URLSearchParams($page.url.searchParams);
     currentParams.set('page', String(newPage));
+    goto(`?${currentParams.toString()}`, { keepFocus: true });
+  }
+
+  function handlePageSizeChange(newSize: number) {
+    const currentParams = new URLSearchParams($page.url.searchParams);
+    currentParams.set('pageSize', String(newSize));
+    currentParams.set('page', '1');
     goto(`?${currentParams.toString()}`, { keepFocus: true });
   }
 
@@ -448,31 +455,49 @@
     </Card>
 
     <!-- Pagination Footer -->
-    <div class="flex items-center justify-between bg-muted/20 border border-border rounded-lg px-6 py-4 text-xs mt-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/20 border border-border rounded-lg px-6 py-4 text-xs mt-6">
       <span class="text-muted-foreground">
         Page <strong>{pageNum}</strong> of <strong>{leadsData.totalPages}</strong> ({leadsData.totalCount} leads)
       </span>
-      <div class="flex items-center gap-1">
-        <Button
-          onclick={() => handlePageChange(pageNum - 1)}
-          disabled={pageNum <= 1}
-          variant="outline"
-          size="sm"
-          class="h-8 gap-1"
-        >
-          <ChevronLeft class="h-4 w-4" />
-          <span>Previous</span>
-        </Button>
-        <Button
-          onclick={() => handlePageChange(pageNum + 1)}
-          disabled={pageNum >= leadsData.totalPages}
-          variant="outline"
-          size="sm"
-          class="h-8 gap-1"
-        >
-          <span>Next</span>
-          <ChevronRight class="h-4 w-4" />
-        </Button>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+          <select
+            value={pageSizeNum}
+            onchange={(e) => handlePageSizeChange(parseInt((e.target as HTMLSelectElement).value, 10))}
+            class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
+            <option value={500}>500</option>
+            <option value={1000}>1000 (All)</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-1">
+          <Button
+            onclick={() => handlePageChange(pageNum - 1)}
+            disabled={pageNum <= 1}
+            variant="outline"
+            size="sm"
+            class="h-8 gap-1"
+          >
+            <ChevronLeft class="h-4 w-4" />
+            <span>Previous</span>
+          </Button>
+          <Button
+            onclick={() => handlePageChange(pageNum + 1)}
+            disabled={pageNum >= leadsData.totalPages}
+            variant="outline"
+            size="sm"
+            class="h-8 gap-1"
+          >
+            <span>Next</span>
+            <ChevronRight class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   {/if}

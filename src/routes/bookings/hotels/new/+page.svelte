@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { customerAccountStore } from '$lib/features/customer-accounts/stores/customer-account-store.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import HeadSelect from '$lib/components/HeadSelect.svelte';
   import CountrySelect from '$lib/components/CountrySelect.svelte';
@@ -56,7 +57,7 @@
   let isInhouse = $state(true);
   let supplierId = $state<number | null>(null);
   let expectedSupplierCost = $state(0);
-  let amount = $state(0); // payableAmount
+  let amount = $state<number | ''>(''); // payableAmount
   let country = $state('');
   let days = $state(1);
   let checkInDate = $state('');
@@ -82,7 +83,7 @@
   onMount(async () => {
     loadingHeads = true;
     try {
-      headsList = await lookupHeadsApi('', 100, 'customer');
+      headsList = await lookupHeadsApi('', 1000, 'customer');
     } catch (err) {
       console.error('Failed to load active customer heads:', err);
     } finally {
@@ -91,7 +92,7 @@
 
     loadingAgents = true;
     try {
-      agentsList = await lookupHeadsApi('', 100, 'agent');
+      agentsList = await lookupHeadsApi('', 1000, 'agent');
     } catch (err) {
       console.error('Failed to load active agents:', err);
     } finally {
@@ -121,7 +122,7 @@
   }
 
   // Reactive Profit calculation
-  let computedProfit = $derived(isInhouse ? 0 : Math.max(0, amount - expectedSupplierCost));
+  let computedProfit = $derived(isInhouse ? 0 : Math.max(0, (Number(amount) || 0) - expectedSupplierCost));
 
   function selectHead(head: HeadLookup) {
     headId = head.id ?? null;
@@ -150,7 +151,7 @@
     if (!country.trim()) errors.country = ['Country is required.'];
     if (days <= 0) errors.days = ['Days must be greater than zero.'];
     if (!checkInDate) errors.checkInDate = ['Check-in date is required.'];
-    if (amount < 0) errors.amount = ['Amount must be non-negative.'];
+    if (amount === '' || Number(amount) < 0) errors.amount = ['Amount must be non-negative.'];
     
     if (clientType === 'customer' && !headId) {
       errors.headId = ['Customer account head is required.'];
@@ -173,7 +174,7 @@
     }
 
     const numGuests = guests.length || 1;
-    const perGuestAmount = amount / numGuests;
+    const perGuestAmount = (Number(amount) || 0) / numGuests;
     const perGuestCost = (isInhouse ? 0 : expectedSupplierCost) / numGuests;
 
     // Prepare Request Body
@@ -196,7 +197,7 @@
       isInhouse,
       supplierId: isInhouse ? null : supplierId,
       expectedSupplierCost: isInhouse ? 0 : expectedSupplierCost,
-      amount,
+      amount: Number(amount) || 0,
       country,
       days,
       checkInDate: new Date(checkInDate).toISOString(),
@@ -210,10 +211,27 @@
 
     try {
       const response = await createHotelBooking(request, getFreshIdempotencyKey());
-      successMsg = `Booking ${response.documentNumber} successfully created!`;
-      setTimeout(() => {
-        goto('/bookings/hotels');
-      }, 1000);
+      if (headId) customerAccountStore.invalidate(headId);
+      successMsg = `Booking ${response.documentNumber} successfully created! Ready for next entry.`;
+
+      // Reset hotel fields while preserving customer head selection
+      hotelName = '';
+      country = '';
+      days = 1;
+      checkInDate = '';
+      guests = [{ prefix: 'Mr.', guestName: '' }];
+      amount = '';
+      expectedSupplierCost = 0;
+      isInhouse = true;
+      supplierId = null;
+      paymentMethod = 'credit';
+      bankId = null;
+      status = 'pending';
+      validationErrors = {};
+      errorMsg = '';
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err: any) {
       if (err.status === 422 || err.status === 400) {
         if (err.errors) {
@@ -462,12 +480,6 @@
           <CardTitle class="text-base">Costing & Profit</CardTitle>
         </CardHeader>
         <CardContent class="space-y-4">
-          <div class="space-y-1.5">
-            <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer mb-2">
-              <input type="checkbox" bind:checked={isInhouse} class="accent-primary" />
-              <span>In-house booking</span>
-            </label>
-          </div>
 
           <div class="space-y-1.5">
             <label for="payableAmountInput" class="text-xs font-semibold text-muted-foreground">Selling Price (BHD) *</label>
@@ -478,9 +490,10 @@
                 type="number"
                 step="0.001"
                 min="0"
+                placeholder="0.000"
                 class="pl-11"
                 value={amount}
-                oninput={(e) => amount = Number(e.currentTarget.value) || 0}
+                oninput={(e) => amount = e.currentTarget.value === '' ? '' : Number(e.currentTarget.value)}
                 required
               />
             </div>

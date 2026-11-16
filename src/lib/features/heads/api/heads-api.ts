@@ -13,6 +13,14 @@ export interface HeadsQueryParams {
   sortBy?: string;
   sortOrder?: string;
   type?: string;
+  countryCode?: string;
+}
+
+export interface CountryCodeOption {
+  countryCode: string;
+  countryName: string;
+  flag: string;
+  count: number;
 }
 
 export interface HeadLedgerQueryParams {
@@ -86,9 +94,19 @@ export async function getOutstandingBookings(
 /**
  * Looks up active heads by search term. Pass type='agent' for agency accounts, type='customer' (default) for direct customers.
  */
+/**
+ * Fetches distinct available country codes and countries for heads.
+ */
+export async function getAvailableCountryCodes(type?: string, signal?: AbortSignal): Promise<CountryCodeOption[]> {
+  return apiFetch<CountryCodeOption[]>('/api/sales/heads/country-codes', {
+    params: { type },
+    signal
+  });
+}
+
 export async function lookupHeads(
   search?: string,
-  limit?: number,
+  limit: number = 1000,
   type?: string,
   signal?: AbortSignal
 ): Promise<components['schemas']['HeadLookupResponse'][]> {

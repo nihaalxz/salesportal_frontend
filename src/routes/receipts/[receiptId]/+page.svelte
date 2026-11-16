@@ -51,6 +51,46 @@
 
 
 
+  function getServiceBadgeConfig(service: string) {
+    const s = (service || '').toLowerCase().trim();
+    switch (s) {
+      case 'deposit':
+      case 'wallet_deposit':
+        return {
+          label: 'Deposit',
+          classes: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+        };
+      case 'credit_settlement':
+        return {
+          label: 'Credit Settlement',
+          classes: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+        };
+      case 'flights':
+      case 'flight':
+        return {
+          label: 'Flight',
+          classes: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800'
+        };
+      case 'hotels':
+      case 'hotel':
+        return {
+          label: 'Hotel',
+          classes: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800'
+        };
+      case 'visas':
+      case 'visa':
+        return {
+          label: 'Visa',
+          classes: 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-950/60 dark:text-violet-300 dark:border-violet-800'
+        };
+      default:
+        return {
+          label: s ? s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Receipt',
+          classes: 'bg-muted text-muted-foreground border-border'
+        };
+    }
+  }
+
   $effect(() => {
     loadReceiptDetails();
   });
@@ -86,6 +126,7 @@
   </div>
 
 {:else if receipt}
+  {@const serviceBadge = getServiceBadgeConfig(receipt.service)}
   <div class="space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
       <div class="space-y-1">
@@ -114,8 +155,8 @@
           <CardContent class="grid grid-cols-2 gap-6 text-sm">
             <div>
               <span class="text-muted-foreground block text-xs mb-1">Service Type</span>
-              <span class="font-bold text-foreground capitalize bg-primary/10 text-primary px-2.5 py-1 rounded text-xs inline-block border border-primary/20">
-                {receipt.service === 'credit_settlement' ? 'Credit Settlement' : receipt.service.replace('_', ' ')}
+              <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border {serviceBadge.classes}">
+                {serviceBadge.label}
               </span>
             </div>
             <div>

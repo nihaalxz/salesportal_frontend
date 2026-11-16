@@ -114,7 +114,7 @@
       { key: 'Flights', count: summary.totalFlightBookings || 0, label: 'Flight Tickets', color: 'bg-blue-500' },
       { key: 'Hotels', count: summary.totalHotelBookings || 0, label: 'Hotel Bookings', color: 'bg-orange-500' },
       { key: 'Visas', count: summary.totalVisaApplications || 0, label: 'Visa Services', color: 'bg-purple-500' },
-      { key: 'Vfs', count: summary.totalVfsAppointments || 0, label: 'VFS Appointments', color: 'bg-pink-500' },
+      { key: 'Vfs', count: summary.totalVfsAppointments || 0, label: 'VFS Service', color: 'bg-pink-500' },
       { key: 'Holidays', count: summary.totalHolidayPackages || 0, label: 'Holiday Packages', color: 'bg-teal-500' },
       { key: 'Transport', count: summary.totalTransportations || 0, label: 'Transportation', color: 'bg-indigo-500' },
       { key: 'Other', count: summary.totalOtherServices || 0, label: 'Other Services', color: 'bg-slate-500' }

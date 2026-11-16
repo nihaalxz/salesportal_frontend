@@ -25,6 +25,7 @@
 
   // Reactively bind query parameters from URL state
   let currentPage = $derived(Number(page.url.searchParams.get('page') || '1'));
+  let pageSize = $derived(Number(page.url.searchParams.get('pageSize') || '10'));
   let paymentStatus = $derived(page.url.searchParams.get('paymentStatus') || '');
   let processingStatus = $derived(page.url.searchParams.get('processingStatus') || '');
   let searchTerm = $derived(page.url.searchParams.get('searchTerm') || page.url.searchParams.get('search') || '');
@@ -68,7 +69,7 @@
     try {
       const response = await getVfsAppointments({
         page: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
         paymentStatus: paymentStatus || undefined,
         processingStatus: processingStatus || undefined,
         searchTerm: searchTerm || undefined
@@ -111,8 +112,8 @@
         url.searchParams.set(key, String(val));
       }
     });
-    // Reset page to 1 on filter changes
-    if (!newParams.page) {
+    // Reset page to 1 on filter changes unless page was specified
+    if (!('page' in newParams)) {
       url.searchParams.set('page', '1');
     }
     goto(url.toString(), { keepFocus: true, noScroll: true });
@@ -126,11 +127,11 @@
   }
 </script>
 
-<PageHeader title="VFS Appointments" description="Manage client visa biometrics appointments and scheduling.">
+<PageHeader title="VFS Service" description="Manage client visa biometrics appointments and scheduling.">
   <div class="flex items-center gap-2">
     <Button onclick={() => goto('/bookings/vfs/new')} variant="default" size="sm" class="gap-1.5" id="btn-create-vfs">
       <Plus class="h-4 w-4" />
-      <span>Create Appointment</span>
+      <span>Create Booking</span>
     </Button>
     <Button onclick={loadData} variant="outline" size="sm" class="gap-1.5" disabled={loading}>
       <RefreshCw class="h-3.5 w-3.5 {loading ? 'animate-spin' : ''}" />
@@ -210,7 +211,7 @@
   <div class="space-y-6">
     <Alert.Root variant="destructive">
       <AlertCircle class="h-5 w-5" />
-      <Alert.Title>Failed to load VFS appointments</Alert.Title>
+      <Alert.Title>Failed to load VFS service</Alert.Title>
       <Alert.Description class="mt-2 text-sm">
         {error.detail || error.message || 'An unexpected connection failure occurred.'}
       </Alert.Description>
@@ -233,8 +234,8 @@
     <div class="border border-dashed border-border rounded-lg p-12 text-center flex flex-col items-center justify-center gap-3">
       <FileText class="h-10 w-10 text-muted-foreground/30" />
       <div>
-        <p class="text-sm font-semibold text-muted-foreground">No VFS appointments recorded</p>
-        <p class="text-xs text-muted-foreground/70 mt-1">Create a VFS appointment to get started.</p>
+        <p class="text-sm font-semibold text-muted-foreground">No VFS service records found</p>
+        <p class="text-xs text-muted-foreground/70 mt-1">Create a VFS service booking to get started.</p>
       </div>
       <Button onclick={() => goto('/bookings/vfs/new')} variant="outline" size="sm" class="mt-2">
         Create First Booking
@@ -253,7 +254,6 @@
               <th scope="col" class="px-6 py-4">Visa Type</th>
               <th scope="col" class="px-6 py-4">Appt Date</th>
               <th scope="col" class="px-6 py-4">Amount</th>
-              <th scope="col" class="px-6 py-4">Payment</th>
               <th scope="col" class="px-6 py-4">Status</th>
               <th scope="col" class="px-6 py-4 text-right">Actions</th>
             </tr>
@@ -305,11 +305,6 @@
                   <MoneyDisplay amount={booking.payableAmount} />
                 </td>
                 
-                <!-- Payment Status -->
-                <td class="px-6 py-4">
-                  <StatusBadge status={booking.paymentStatus} />
-                </td>
-                
                 <!-- Processing Status -->
                 <td class="px-6 py-4">
                   <StatusBadge status={booking.processingStatus} />
@@ -334,37 +329,56 @@
       </div>
 
       <!-- Pagination Footer -->
-      <div class="px-6 py-4 border-t border-border flex items-center justify-between gap-4 bg-muted/10 text-xs">
+      <div class="px-6 py-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10 text-xs">
         <span class="text-muted-foreground">
           Showing <strong>{data.items.length}</strong> of <strong>{data.totalCount}</strong> appointments
         </span>
         
-        <div class="flex items-center gap-2">
-          <Button 
-            onclick={() => updateFilters({ page: currentPage - 1 })}
-            disabled={currentPage <= 1}
-            variant="outline" 
-            size="icon" 
-            class="h-8 w-8"
-            aria-label="Previous Page"
-          >
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
-          
-          <span class="font-medium text-foreground px-2">
-            Page {currentPage} of {data.totalPages}
-          </span>
-          
-          <Button 
-            onclick={() => updateFilters({ page: currentPage + 1 })}
-            disabled={currentPage >= data.totalPages}
-            variant="outline" 
-            size="icon" 
-            class="h-8 w-8"
-            aria-label="Next Page"
-          >
-            <ChevronRight class="h-4 w-4" />
-          </Button>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+            <select
+              value={pageSize}
+              onchange={(e) => updateFilters({ pageSize: (e.target as HTMLSelectElement).value, page: 1 })}
+              class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+              <option value={500}>500</option>
+              <option value={1000}>1000 (All)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <Button 
+              onclick={() => updateFilters({ page: currentPage - 1 })}
+              disabled={currentPage <= 1}
+              variant="outline" 
+              size="icon" 
+              class="h-8 w-8"
+              aria-label="Previous Page"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </Button>
+            
+            <span class="font-medium text-foreground px-2">
+              Page {currentPage} of {data.totalPages}
+            </span>
+            
+            <Button 
+              onclick={() => updateFilters({ page: currentPage + 1 })}
+              disabled={currentPage >= data.totalPages}
+              variant="outline" 
+              size="icon" 
+              class="h-8 w-8"
+              aria-label="Next Page"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

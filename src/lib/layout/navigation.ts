@@ -24,6 +24,7 @@ export interface NavItem {
   children?: NavItem[];
   exactMatch?: boolean;
   colorClass?: string;
+  shortcut?: string;
 }
 
 export const navigationConfig: NavItem[] = [
@@ -40,7 +41,8 @@ export const navigationConfig: NavItem[] = [
     route: '/heads?type=customer',
     icon: Users,
     permission: 'read:heads',
-    colorClass: 'text-emerald-500 dark:text-emerald-400'
+    colorClass: 'text-emerald-500 dark:text-emerald-400',
+    shortcut: 'F10'
   },
   {
     label: 'Leads',
@@ -50,11 +52,12 @@ export const navigationConfig: NavItem[] = [
     colorClass: 'text-violet-500 dark:text-violet-400'
   },
   {
-    label: 'Receipts',
+    label: 'Receipts history',
     route: '/receipts',
     icon: Receipt,
     permission: 'read:receipts',
-    colorClass: 'text-amber-500 dark:text-amber-400'
+    colorClass: 'text-amber-500 dark:text-amber-400',
+    shortcut: 'F9'
   },
   {
     label: 'Quotations',
@@ -74,43 +77,50 @@ export const navigationConfig: NavItem[] = [
         label: 'Flight Tickets',
         route: '/bookings/flights',
         icon: Plane,
-        colorClass: 'text-sky-500 dark:text-sky-400'
+        colorClass: 'text-sky-500 dark:text-sky-400',
+        shortcut: 'F2'
       },
       {
         label: 'Hotel Bookings',
         route: '/bookings/hotels',
         icon: Hotel,
-        colorClass: 'text-rose-500 dark:text-rose-400'
+        colorClass: 'text-rose-500 dark:text-rose-400',
+        shortcut: 'F3'
       },
       {
         label: 'Visa Services',
         route: '/bookings/visas',
         icon: FileText,
-        colorClass: 'text-cyan-500 dark:text-cyan-400'
+        colorClass: 'text-cyan-500 dark:text-cyan-400',
+        shortcut: 'F1'
       },
       {
-        label: 'VFS Appointments',
+        label: 'VFS Service',
         route: '/bookings/vfs',
         icon: CalendarRange,
-        colorClass: 'text-indigo-500 dark:text-indigo-400'
+        colorClass: 'text-indigo-500 dark:text-indigo-400',
+        shortcut: 'F4'
       },
       {
         label: 'Holiday Packages',
         route: '/bookings/holidays',
         icon: Compass,
-        colorClass: 'text-teal-500 dark:text-teal-400'
+        colorClass: 'text-teal-500 dark:text-teal-400',
+        shortcut: 'F6'
       },
       {
         label: 'Transportation',
         route: '/bookings/transport',
         icon: Car,
-        colorClass: 'text-green-500 dark:text-green-400'
+        colorClass: 'text-green-500 dark:text-green-400',
+        shortcut: 'F7'
       },
       {
         label: 'Other Services',
         route: '/bookings/other-services',
         icon: ConciergeBell,
-        colorClass: 'text-fuchsia-500 dark:text-fuchsia-400'
+        colorClass: 'text-fuchsia-500 dark:text-fuchsia-400',
+        shortcut: 'F8'
       }
     ]
   },

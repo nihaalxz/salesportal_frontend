@@ -5,12 +5,13 @@
   const segmentLabels: Record<string, string> = {
     dashboard: 'Dashboard',
     leads: 'Leads',
+    receipts: 'Receipts history',
     heads: 'Heads',
     bookings: 'Bookings',
     flights: 'Flight Tickets',
     hotels: 'Hotel Bookings',
     visas: 'Visa Services',
-    vfs: 'VFS Appointments',
+    vfs: 'VFS Service',
     holidays: 'Holiday Packages',
     transport: 'Transportation',
     'other-services': 'Other Services'

@@ -1,12 +1,13 @@
 <script lang="ts">
   import Breadcrumbs from './Breadcrumbs.svelte';
   import Sidebar from './Sidebar.svelte';
-  import { Sun, Moon } from 'lucide-svelte';
+  import { Sun, Moon, Keyboard } from 'lucide-svelte';
   import { Button } from '$lib/components/ui/button';
   import { authState } from '$lib/auth/session';
   import { onMount } from 'svelte';
   import { getAvatarUrl } from '$lib/api/client';
   import NotificationDropdown from './NotificationDropdown.svelte';
+  import { toggleShortcutsModal } from '$lib/services/shortcuts';
 
   let isDark = $state(false);
 
@@ -61,6 +62,18 @@
   <div class="flex items-center gap-4">
     <!-- Notifications Dropdown -->
     <NotificationDropdown />
+
+    <!-- Keyboard Shortcuts Help -->
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      class="text-muted-foreground hover:text-foreground hidden sm:inline-flex" 
+      onclick={() => toggleShortcutsModal(true)} 
+      title="Keyboard Shortcuts (?)"
+      aria-label="Keyboard Shortcuts"
+    >
+      <Keyboard class="h-4.5 w-4.5" />
+    </Button>
 
     <!-- Theme toggle -->
     <Button variant="ghost" size="icon" class="text-muted-foreground" onclick={toggleTheme} aria-label="Toggle theme mode">

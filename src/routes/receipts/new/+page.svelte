@@ -69,7 +69,7 @@
   async function searchHeads(term: string) {
     searchingHeads = true;
     try {
-      headsList = await lookupHeads(term, 100, clientType);
+      headsList = await lookupHeads(term, 1000, clientType);
     } catch (err) {
       console.error(err);
     } finally {

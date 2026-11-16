@@ -67,11 +67,13 @@
 
     // 1. Search Filter (Reference Code, Description, Service Type)
     if (searchFilter.trim()) {
-      const q = searchFilter.toLowerCase().trim();
+      const tokens = searchFilter.toLowerCase().trim().split(/\s+/).filter(Boolean);
       items = items.filter(b => 
-        (b.referenceCode || '').toLowerCase().includes(q) ||
-        (b.description || '').toLowerCase().includes(q) ||
-        (b.serviceType || '').toLowerCase().includes(q)
+        tokens.every(tok =>
+          (b.referenceCode || '').toLowerCase().includes(tok) ||
+          (b.description || '').toLowerCase().includes(tok) ||
+          (b.serviceType || '').toLowerCase().includes(tok)
+        )
       );
     }
 
@@ -236,8 +238,8 @@
     'hotel_booking': { label: 'Hotel Booking', color: 'bg-orange-100 dark:bg-orange-900/40 text-orange-900 dark:text-orange-200 border border-orange-300/60 dark:border-orange-700/40' },
     'Visa': { label: 'Visa Application', color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-200 border border-purple-300/60 dark:border-purple-700/40' },
     'visa_application': { label: 'Visa Application', color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-200 border border-purple-300/60 dark:border-purple-700/40' },
-    'Vfs': { label: 'VFS Appointment', color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-200 border border-pink-300/60 dark:border-pink-700/40' },
-    'vfs_appointment': { label: 'VFS Appointment', color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-200 border border-pink-300/60 dark:border-pink-700/40' },
+    'Vfs': { label: 'VFS Service', color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-200 border border-pink-300/60 dark:border-pink-700/40' },
+    'vfs_appointment': { label: 'VFS Service', color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-900 dark:text-pink-200 border border-pink-300/60 dark:border-pink-700/40' },
     'Holiday': { label: 'Holiday Package', color: 'bg-teal-100 dark:bg-teal-900/40 text-teal-900 dark:text-teal-200 border border-teal-300/60 dark:border-teal-700/40' },
     'holiday_package': { label: 'Holiday Package', color: 'bg-teal-100 dark:bg-teal-900/40 text-teal-900 dark:text-teal-200 border border-teal-300/60 dark:border-teal-700/40' },
     'Transport': { label: 'Transportation', color: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-900 dark:text-indigo-200 border border-indigo-300/60 dark:border-indigo-700/40' },
@@ -293,6 +295,80 @@
     return desc.replace(/\s*\((?:Credit\s+Facility|CreditFacility)\)/gi, '').trim();
   }
 
+  function getBookingDetailUrl(row: any): string | null {
+    if (!row) return null;
+
+    let targetId: string | null = null;
+
+    // 1. Prioritize serviceId (numeric booking or receipt primary key)
+    if (row.serviceId != null && String(row.serviceId).trim() !== '' && String(row.serviceId) !== '0') {
+      targetId = String(row.serviceId);
+    }
+
+    // 2. Fallback to Document Code / ID from description (e.g. "#TXSVISA750799", "#TXSFLT788386", "#TXSRCPT10023", "#15")
+    if (!targetId && row.description) {
+      const match = row.description.match(/#([A-Za-z0-9_-]+)/) || row.description.match(/\b(TXS[A-Za-z0-9_-]+)\b/i);
+      if (match && match[1]) {
+        targetId = match[1];
+      }
+    }
+
+    // 3. Fallback to row.id if this is a direct booking/receipt row
+    if (!targetId && row.id != null) {
+      targetId = String(row.id);
+    }
+
+    const type = (row.type || '').toLowerCase();
+    const desc = (row.description || '').toLowerCase();
+
+    // Check receipts/deposits FIRST so receipts with service descriptions aren't misrouted
+    const isReceiptOrDeposit =
+      type === 'receipt' ||
+      type === 'receipts' ||
+      type === 'deposit' ||
+      type === 'wallet_deposit' ||
+      type === 'credit_settlement' ||
+      type === 'payment' ||
+      desc.startsWith('receipt') ||
+      desc.includes('receipt #') ||
+      desc.includes('wallet deposit') ||
+      desc.includes('payment received') ||
+      desc.includes('txsrcpt');
+
+    if (isReceiptOrDeposit) {
+      if (targetId) {
+        return `/receipts/${targetId}`;
+      }
+      return `/receipts`;
+    }
+
+    if (!targetId) return null;
+
+    if (type === 'flight' || type === 'flights' || type === 'flight_booking' || desc.includes('flight')) {
+      return `/bookings/flights/${targetId}`;
+    }
+    if (type === 'hotel' || type === 'hotels' || type === 'hotel_booking' || desc.includes('hotel')) {
+      return `/bookings/hotels/${targetId}`;
+    }
+    if (type === 'visa' || type === 'visas' || type === 'visa_application' || desc.includes('visa')) {
+      return `/bookings/visas/${targetId}`;
+    }
+    if (type === 'vfs' || type === 'vfs_appointment' || desc.includes('vfs')) {
+      return `/bookings/vfs/${targetId}`;
+    }
+    if (type === 'holiday' || type === 'holidays' || type === 'holiday_package' || desc.includes('holiday')) {
+      return `/bookings/holidays/${targetId}`;
+    }
+    if (type === 'transport' || type === 'transportation' || desc.includes('transport')) {
+      return `/bookings/transport/${targetId}`;
+    }
+    if (type === 'other' || type === 'otherservice' || type === 'other-services' || type === 'other_service' || desc.includes('other service')) {
+      return `/bookings/other-services/${targetId}`;
+    }
+
+    return null;
+  }
+
   let ledgerPage = $derived.by(() => {
     const p = $page.url.searchParams.get('ledgerPage');
     if (p) {
@@ -309,9 +385,7 @@
     error = null;
     try {
       head = await getHeadById(headId, urlType);
-      if (head) {
-        await loadLedger();
-      } else {
+      if (!head) {
         error = { status: 404, detail: 'Head record was not found.' };
       }
     } catch (err: any) {
@@ -327,11 +401,12 @@
     if (abortController) {
       abortController.abort();
     }
-    abortController = new AbortController();
+    const currentAbort = new AbortController();
+    abortController = currentAbort;
     
     ledgerLoading = true;
     try {
-      ledgerData = await getHeadLedger(headId, { 
+      const res = await getHeadLedger(headId, { 
         page: ledgerPage, 
         pageSize: 10, 
         type: headType,
@@ -340,13 +415,17 @@
         serviceType: ledgerServiceFilter !== 'all' ? ledgerServiceFilter : undefined,
         search: ledgerSearch.trim() || undefined,
         sort: ledgerSort
-      }, abortController.signal);
+      }, currentAbort.signal);
+
+      if (!currentAbort.signal.aborted) {
+        ledgerData = res;
+      }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         console.error('Failed to load ledger', err);
       }
     } finally {
-      if (!abortController.signal.aborted) {
+      if (!currentAbort.signal.aborted) {
         ledgerLoading = false;
       }
     }
@@ -380,12 +459,14 @@
   }
 
   $effect(() => {
+    const _ = [headId, urlType];
     loadHeadDetails();
   });
 
   $effect(() => {
-    // Reload ledger when ledgerPage parameters shift
+    // Reload ledger when ledger tab is active or ledgerPage / headType changes
     if (head && activeTab === 'ledger') {
+      const _ = [head.id, headType, ledgerPage];
       loadLedger();
     }
   });
@@ -659,7 +740,7 @@
                   <option value="flight">Flight Ticket</option>
                   <option value="hotel">Hotel Booking</option>
                   <option value="visa">Visa Application</option>
-                  <option value="vfs">VFS Appointment</option>
+                  <option value="vfs">VFS Service</option>
                   <option value="holiday">Holiday Package</option>
                   <option value="transport">Transportation</option>
                   <option value="other">Other Service</option>
@@ -747,13 +828,14 @@
                     <th class="px-6 py-4">Transaction Date</th>
                     <th class="px-6 py-4">Service Type</th>
                     <th class="px-6 py-4">Description</th>
-                    <th class="px-6 py-4">Payment Method</th>
                     <th class="px-6 py-4 text-right">Debit</th>
                     <th class="px-6 py-4 text-right">Credit</th>
+                    <th class="px-6 py-4 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
-                  {#each ledgerData.items as entry (entry.id)}
+                  {#each ledgerData.items as entry, idx (`${entry.type}_${entry.id}_${idx}`)}
+                    {@const detailUrl = getBookingDetailUrl(entry)}
                     <tr class="hover:bg-muted/20">
                       <td class="px-6 py-4 text-xs font-mono text-muted-foreground">
                         {formatDateTime(entry.createdAt)}
@@ -763,14 +845,19 @@
                           {getServiceTypeDisplay(entry.type, entry.description).label}
                         </span>
                       </td>
-                      <td class="px-6 py-4 text-foreground text-xs">{formatLedgerDescription(entry.description)}</td>
-                      <td class="px-6 py-4">
-                        {#if entry.paymentMethod}
-                          <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
-                            {entry.paymentMethod}
-                          </span>
+                      <td class="px-6 py-4 text-foreground text-xs">
+                        {#if detailUrl}
+                          <a
+                            href={detailUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary hover:underline transition-colors group"
+                          >
+                            <span>{formatLedgerDescription(entry.description)}</span>
+                            <ExternalLink class="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                          </a>
                         {:else}
-                          <span class="text-xs text-muted-foreground">—</span>
+                          <span>{formatLedgerDescription(entry.description)}</span>
                         {/if}
                       </td>
                       <td class="px-6 py-4 text-right font-mono text-destructive">
@@ -791,6 +878,22 @@
                           </div>
                         {:else}
                           —
+                        {/if}
+                      </td>
+                      <td class="px-6 py-4 text-center">
+                        {#if detailUrl}
+                          <a
+                            href={detailUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-primary/30 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                            title="Open details in new tab"
+                          >
+                            <span>View</span>
+                            <ExternalLink class="h-3 w-3" />
+                          </a>
+                        {:else}
+                          <span class="text-muted-foreground/40 font-normal">—</span>
                         {/if}
                       </td>
                     </tr>

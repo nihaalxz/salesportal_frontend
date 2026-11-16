@@ -98,7 +98,7 @@
   onMount(async () => {
     loadingHeads = true;
     try {
-      headsList = await lookupHeadsApi('', 100, 'customer');
+      headsList = await lookupHeadsApi('', 1000, 'customer');
     } catch (err) {
       console.error('Failed to load active customer heads:', err);
     } finally {
@@ -107,7 +107,7 @@
 
     loadingAgents = true;
     try {
-      agentsList = await lookupHeadsApi('', 100, 'agent');
+      agentsList = await lookupHeadsApi('', 1000, 'agent');
     } catch (err) {
       console.error('Failed to load active agents:', err);
     } finally {

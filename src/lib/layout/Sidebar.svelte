@@ -88,14 +88,21 @@
                   <a
                     href={child.route}
                     class={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors",
+                      "flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-colors group",
                       isRouteActive($page.url.pathname, child.route)
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
-                    <child.icon class={cn("h-3.5 w-3.5 shrink-0", child.colorClass)} />
-                    <span>{child.label}</span>
+                    <div class="flex items-center gap-3 min-w-0">
+                      <child.icon class={cn("h-3.5 w-3.5 shrink-0", child.colorClass)} />
+                      <span class="truncate">{child.label}</span>
+                    </div>
+                    {#if child.shortcut}
+                      <kbd class="ml-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/70 group-hover:border-border transition-colors shrink-0">
+                        {child.shortcut}
+                      </kbd>
+                    {/if}
                   </a>
                 {/each}
               </div>
@@ -106,14 +113,21 @@
           <a
             href={item.route}
             class={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+              "flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors group",
               isRouteActive($page.url.pathname, item.route, item.exactMatch)
                 ? "bg-primary/10 text-primary font-semibold"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
-            <item.icon class={cn("h-4.5 w-4.5 shrink-0", item.colorClass)} />
-            <span>{item.label}</span>
+            <div class="flex items-center gap-3 min-w-0">
+              <item.icon class={cn("h-4.5 w-4.5 shrink-0", item.colorClass)} />
+              <span class="truncate">{item.label}</span>
+            </div>
+            {#if item.shortcut}
+              <kbd class="ml-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/70 group-hover:border-border transition-colors shrink-0">
+                {item.shortcut}
+              </kbd>
+            {/if}
           </a>
         {/if}
       {/each}

@@ -26,11 +26,11 @@ describe('Heads URL State Manager', () => {
     });
 
     it('should fall back defensively on invalid values', () => {
-      const query = new URLSearchParams('page=-5&pageSize=200&sortBy=invalidCol&sortOrder=invalidDirection');
+      const query = new URLSearchParams('page=-5&pageSize=9999&sortBy=invalidCol&sortOrder=invalidDirection');
       const params = parseHeadsUrlParams(query);
       
       expect(params.page).toBe(DEFAULTS.page);
-      expect(params.pageSize).toBe(DEFAULTS.pageSize); // fallback because 200 > 100 maximum boundary
+      expect(params.pageSize).toBe(DEFAULTS.pageSize); // fallback because 9999 > 1000 maximum boundary
       expect(params.sortBy).toBe(DEFAULTS.sortBy);
       expect(params.sortOrder).toBe(DEFAULTS.sortOrder);
     });

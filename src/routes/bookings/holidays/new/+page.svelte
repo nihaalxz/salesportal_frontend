@@ -58,7 +58,7 @@
   let selectedCountries = $state<string[]>([]);
   let days = $state(1);
   let expectedSupplierCost = $state(0);
-  let amount = $state(0);
+  let amount = $state<number | ''>('');
   let paymentMethod = $state('credit');
   let realBanks = $state<BankResponse[]>([]);
   let bankId = $state<number | null>(null);
@@ -80,7 +80,7 @@
   onMount(async () => {
     loadingHeads = true;
     try {
-      headsList = await lookupHeadsApi('', 100, 'customer');
+      headsList = await lookupHeadsApi('', 1000, 'customer');
     } catch (err) {
       console.error('Failed to load active customer heads:', err);
     } finally {
@@ -89,7 +89,7 @@
 
     loadingAgents = true;
     try {
-      agentsList = await lookupHeadsApi('', 100, 'agent');
+      agentsList = await lookupHeadsApi('', 1000, 'agent');
     } catch (err) {
       console.error('Failed to load active agents:', err);
     } finally {
@@ -119,7 +119,7 @@
   }
 
   // Reactive Profit calculation
-  let computedProfit = $derived(isInhouse ? 0 : Math.max(0, amount - expectedSupplierCost));
+  let computedProfit = $derived(isInhouse ? 0 : Math.max(0, (Number(amount) || 0) - expectedSupplierCost));
 
   function selectHead(head: HeadLookup) {
     headId = head.id ?? null;
@@ -146,7 +146,7 @@
       errors.country = ['At least one destination country is required.'];
     }
     if (days <= 0) errors.days = ['Package duration must be at least 1 day.'];
-    if (amount <= 0) errors.amount = ['Payable amount must be greater than zero.'];
+    if (amount === '' || Number(amount) <= 0) errors.amount = ['Payable amount must be greater than zero.'];
     if (expectedSupplierCost < 0) errors.expectedSupplierCost = ['Expected supplier cost cannot be negative.'];
 
     if (!isInhouse && !supplierId) {
@@ -169,7 +169,7 @@
     }
 
     const numPassengers = passengers.length || 1;
-    const perPassengerAmount = amount / numPassengers;
+    const perPassengerAmount = (Number(amount) || 0) / numPassengers;
     const perPassengerCost = (isInhouse ? 0 : expectedSupplierCost) / numPassengers;
 
     const request: any = {
@@ -192,7 +192,7 @@
       country: selectedCountries.join(', '),
       days,
       expectedSupplierCost: isInhouse ? 0 : expectedSupplierCost,
-      amount,
+      amount: Number(amount) || 0,
       paymentMethod,
       paymentProof: null,
       bankId: paymentMethod === 'online' ? bankId : null,
@@ -202,10 +202,23 @@
     try {
       const response = await createHolidayPackage(request, getFreshIdempotencyKey());
       if (headId) customerAccountStore.invalidate(headId);
-      successMsg = `Holiday Package Booking ${response.documentNumber} successfully created!`;
-      setTimeout(() => {
-        goto('/bookings/holidays');
-      }, 1200);
+      successMsg = `Holiday Package Booking ${response.documentNumber} successfully created! Ready for next entry.`;
+
+      // Reset holiday fields while preserving customer head selection
+      passengers = [{ prefix: 'Mr.', passengerName: '' }];
+      selectedCountries = [];
+      days = 1;
+      expectedSupplierCost = 0;
+      amount = '';
+      isInhouse = true;
+      supplierId = null;
+      paymentMethod = 'credit';
+      bankId = null;
+      validationErrors = {};
+      errorMsg = '';
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err: any) {
       if (err.status === 422 || err.status === 400) {
         if (err.errors) {
@@ -429,12 +442,6 @@
           <CardTitle class="text-base">Costing & Profit</CardTitle>
         </CardHeader>
         <CardContent class="space-y-4">
-          <div class="space-y-1.5">
-            <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer mb-2">
-              <input type="checkbox" bind:checked={isInhouse} class="accent-primary" />
-              <span>In-house package</span>
-            </label>
-          </div>
 
           <div class="space-y-1.5">
             <label for="amountInput" class="text-xs font-semibold text-muted-foreground">Selling Price (BHD) *</label>
@@ -445,9 +452,10 @@
                 type="number"
                 step="0.001"
                 min="0"
+                placeholder="0.000"
                 class="pl-11"
                 value={amount}
-                oninput={(e) => amount = Number(e.currentTarget.value) || 0}
+                oninput={(e) => amount = e.currentTarget.value === '' ? '' : Number(e.currentTarget.value)}
                 required
               />
             </div>

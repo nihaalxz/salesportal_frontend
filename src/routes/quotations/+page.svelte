@@ -33,6 +33,7 @@
 
   // Reactively bind query parameters from URL state
   let currentPage = $derived(Number(page.url.searchParams.get('page') || '1'));
+  let pageSize = $derived(Number(page.url.searchParams.get('pageSize') || '10'));
   let searchTerm = $derived(page.url.searchParams.get('searchTerm') || page.url.searchParams.get('search') || '');
   let statusFilter = $derived(page.url.searchParams.get('status') || '');
 
@@ -75,7 +76,7 @@
     try {
       const response = await getQuotations({
         page: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
         searchTerm: searchTerm || undefined,
         status: statusFilter || undefined
       }, abortController.signal);
@@ -121,7 +122,7 @@
         params.set(key, value);
       }
     }
-    if (!newParams.page) {
+    if (!('page' in newParams)) {
       params.set('page', '1');
     }
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
@@ -372,32 +373,50 @@
     </div>
 
     <!-- Pagination Footer -->
-    {#if data && data.totalPages > 1}
-      <div class="p-3 border-t border-border flex items-center justify-between bg-muted/20 text-xs">
+    {#if data && data.totalCount > 0}
+      <div class="p-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/20 text-xs">
         <span class="text-muted-foreground">
           Showing page <strong>{data.items.length ? currentPage : 0}</strong> of <strong>{data.totalPages}</strong> ({data.totalCount} total)
         </span>
-        <div class="flex items-center gap-1.5">
-          <Button 
-            onclick={() => updateFilters({ page: String(currentPage - 1) })}
-            disabled={currentPage <= 1}
-            variant="outline" 
-            size="sm" 
-            class="h-7 px-2 text-xs"
-          >
-            <ChevronLeft class="h-3.5 w-3.5 mr-1" />
-            <span>Previous</span>
-          </Button>
-          <Button 
-            onclick={() => updateFilters({ page: String(currentPage + 1) })}
-            disabled={currentPage >= data.totalPages}
-            variant="outline" 
-            size="sm" 
-            class="h-7 px-2 text-xs"
-          >
-            <span>Next</span>
-            <ChevronRight class="h-3.5 w-3.5 ml-1" />
-          </Button>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+            <select
+              value={pageSize}
+              onchange={(e) => updateFilters({ pageSize: (e.target as HTMLSelectElement).value, page: '1' })}
+              class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+              <option value={500}>500</option>
+              <option value={1000}>1000 (All)</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <Button 
+              onclick={() => updateFilters({ page: String(currentPage - 1) })}
+              disabled={currentPage <= 1}
+              variant="outline" 
+              size="sm" 
+              class="h-7 px-2 text-xs"
+            >
+              <ChevronLeft class="h-3.5 w-3.5 mr-1" />
+              <span>Previous</span>
+            </Button>
+            <Button 
+              onclick={() => updateFilters({ page: String(currentPage + 1) })}
+              disabled={currentPage >= data.totalPages}
+              variant="outline" 
+              size="sm" 
+              class="h-7 px-2 text-xs"
+            >
+              <span>Next</span>
+              <ChevronRight class="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
         </div>
       </div>
     {/if}

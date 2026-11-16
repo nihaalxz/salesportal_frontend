@@ -1,7 +1,11 @@
 import { apiFetch } from '$lib/api/client';
 import type { components } from '$lib/api/generated/api-types';
 
-export type VisaApplicationSummary = components['schemas']['VisaApplicationSummaryResponse'] & { applicantNames?: string | null };
+export type VisaApplicationSummary = components['schemas']['VisaApplicationSummaryResponse'] & {
+  applicantNames?: string | null;
+  countryName?: string | null;
+  country?: string | null;
+};
 export type VisaApplicationSummaryPagedList = components['schemas']['VisaApplicationSummaryResponsePagedResponse'];
 export type VisaApplicationDetail = components['schemas']['VisaApplicationDetailResponse'];
 export type CreateVisaRequest = components['schemas']['CreateVisaBookingRequest'];

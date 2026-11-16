@@ -2,7 +2,6 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import PageHeader from '$lib/components/PageHeader.svelte';
-  import StatusBadge from '$lib/components/StatusBadge.svelte';
   import MoneyDisplay from '$lib/components/MoneyDisplay.svelte';
   import { getReceipts } from '$lib/features/receipts/api/receipts-api';
   import { formatDateOnly, formatDateTime } from '$lib/formatters/date';
@@ -18,7 +17,6 @@
     CreditCard, 
     ShieldAlert,
     RefreshCw,
-    Plus,
     CheckCircle,
     Eye,
     AlertCircle
@@ -86,7 +84,12 @@
     goto(`?${currentParams.toString()}`, { keepFocus: true });
   }
 
-
+  function handlePageSizeChange(newSize: number) {
+    const currentParams = new URLSearchParams($page.url.searchParams);
+    currentParams.set('pageSize', String(newSize));
+    currentParams.set('page', '1');
+    goto(`?${currentParams.toString()}`, { keepFocus: true });
+  }
 
   $effect(() => {
     fetchReceipts($page.url.searchParams);
@@ -98,12 +101,7 @@
   });
 </script>
 
-<PageHeader title="Receipts & Collections" description="Manage payments received and balance allocations.">
-  <Button onclick={() => goto('/receipts/new')} class="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
-    <Plus class="h-4 w-4" />
-    <span>New Receipt</span>
-  </Button>
-</PageHeader>
+<PageHeader title="Receipts history" description="View payments received and balance allocations." />
 
 <div class="space-y-6">
   <!-- Search -->
@@ -148,7 +146,7 @@
           {#if searchInput}
             No payment receipts match your search terms.
           {:else}
-            You have no payment receipts logged in the system. Create a new receipt to record a payment.
+            You have no payment receipts logged in the system.
           {/if}
         </p>
       </CardContent>
@@ -163,10 +161,8 @@
               <th class="px-6 py-4">Receipt ID</th>
               <th class="px-6 py-4">Date</th>
               <th class="px-6 py-4">Customer Head</th>
-              <th class="px-6 py-4">Service</th>
               <th class="px-6 py-4 text-right">Amount</th>
               <th class="px-6 py-4">Method</th>
-              <th class="px-6 py-4">Status</th>
               <th class="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -183,21 +179,13 @@
                 <td class="px-6 py-4 text-foreground font-medium">
                   {r.headName || 'General Account'}
                 </td>
-                <td class="px-6 py-4">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30 capitalize">
-                    {r.service === 'credit_settlement' ? 'Credit Settlement' : r.service.replace('_', ' ')}
-                  </span>
-                </td>
                 <td class="px-6 py-4 text-right font-medium font-mono text-foreground">
                   <MoneyDisplay amount={r.amount} currency="BHD" />
                 </td>
                 <td class="px-6 py-4">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 capitalize">
+                  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-muted text-foreground border border-border capitalize">
                     {r.paymentMode}
                   </span>
-                </td>
-                <td class="px-6 py-4">
-                  <StatusBadge status={r.status} />
                 </td>
                 <td class="px-6 py-4 text-right">
                   <div class="flex justify-end gap-1.5">
@@ -215,31 +203,49 @@
     </Card>
 
     <!-- Pagination Footer -->
-    <div class="flex items-center justify-between bg-muted/20 border border-border rounded-lg px-6 py-4 text-xs mt-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/20 border border-border rounded-lg px-6 py-4 text-xs mt-6">
       <span class="text-muted-foreground">
         Page <strong>{pageNum}</strong> of <strong>{receiptsData.totalPages}</strong> ({receiptsData.totalCount} receipts)
       </span>
-      <div class="flex items-center gap-1">
-        <Button
-          onclick={() => handlePageChange(pageNum - 1)}
-          disabled={pageNum <= 1}
-          variant="outline"
-          size="sm"
-          class="h-8 gap-1"
-        >
-          <ChevronLeft class="h-4 w-4" />
-          <span>Previous</span>
-        </Button>
-        <Button
-          onclick={() => handlePageChange(pageNum + 1)}
-          disabled={pageNum >= receiptsData.totalPages}
-          variant="outline"
-          size="sm"
-          class="h-8 gap-1"
-        >
-          <span>Next</span>
-          <ChevronRight class="h-4 w-4" />
-        </Button>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-muted-foreground whitespace-nowrap">Rows per page:</span>
+          <select
+            value={pageSizeNum}
+            onchange={(e) => handlePageSizeChange(parseInt((e.target as HTMLSelectElement).value, 10))}
+            class="bg-background border border-border rounded px-2 py-1 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
+            <option value={500}>500</option>
+            <option value={1000}>1000 (All)</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-1">
+          <Button
+            onclick={() => handlePageChange(pageNum - 1)}
+            disabled={pageNum <= 1}
+            variant="outline"
+            size="sm"
+            class="h-8 gap-1"
+          >
+            <ChevronLeft class="h-4 w-4" />
+            <span>Previous</span>
+          </Button>
+          <Button
+            onclick={() => handlePageChange(pageNum + 1)}
+            disabled={pageNum >= receiptsData.totalPages}
+            variant="outline"
+            size="sm"
+            class="h-8 gap-1"
+          >
+            <span>Next</span>
+            <ChevronRight class="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   {/if}

@@ -3,6 +3,7 @@
   import PageHeader from '$lib/components/PageHeader.svelte';
   import HeadSelect from '$lib/components/HeadSelect.svelte';
   import CustomerAccountWidget from '$lib/features/customer-accounts/components/CustomerAccountWidget.svelte';
+  import { customerAccountStore } from '$lib/features/customer-accounts/stores/customer-account-store.svelte';
   import MoneyDisplay from '$lib/components/MoneyDisplay.svelte';
   import { createFlightBooking, type HeadLookup } from '$lib/features/flights/api/flights-api';
   import { lookupHeads as lookupHeadsApi } from '$lib/features/heads/api/heads-api';
@@ -118,7 +119,7 @@
   });
 
   // Common Financial & Supplier State (for the whole booking)
-  let amount = $state(0);
+  let amount = $state<number | ''>('');
   let isInhouse = $state(true);
   let supplierId = $state<number | null>(null);
   let expectedSupplierCost = $state(0);
@@ -143,7 +144,7 @@
   onMount(async () => {
     loadingHeads = true;
     try {
-      headsList = await lookupHeadsApi('', 100, 'customer');
+      headsList = await lookupHeadsApi('', 1000, 'customer');
     } catch (err) {
       console.error('Failed to load active customer heads:', err);
     } finally {
@@ -152,7 +153,7 @@
 
     loadingAgents = true;
     try {
-      agentsList = await lookupHeadsApi('', 100, 'agent');
+      agentsList = await lookupHeadsApi('', 1000, 'agent');
     } catch (err) {
       console.error('Failed to load active agents:', err);
     } finally {
@@ -257,7 +258,7 @@
       }
     }
 
-    if (amount <= 0) {
+    if (amount === '' || Number(amount) <= 0) {
       errors.amount = ['Total Ticket Price must be greater than zero.'];
     }
 
@@ -288,7 +289,7 @@
     }
 
     const numPassengers = passengers.length || 1;
-    const perPassengerAmount = amount / numPassengers;
+    const perPassengerAmount = (Number(amount) || 0) / numPassengers;
     const perPassengerSupplierCost = (isInhouse ? 0 : expectedSupplierCost) / numPassengers;
 
     // Build serialized route and flight data
@@ -366,10 +367,35 @@
 
     try {
       const response = await createFlightBooking(request, getFreshIdempotencyKey());
-      successMsg = `Flight booking ${response.documentNumber} successfully created!`;
-      setTimeout(() => {
-        goto('/bookings/flights');
-      }, 1000);
+      if (headId) customerAccountStore.invalidate(headId);
+      successMsg = `Flight booking ${response.documentNumber} successfully created! Ready for next entry.`;
+
+      // Reset flight fields while preserving customer head selection
+      fromLocation = '';
+      toLocation = '';
+      travelDate = '';
+      airlineCompany = '';
+      returnDate = '';
+      returnAirline = '';
+      returnTicketPnr = '';
+      connectionLegs = [
+        { id: 'leg-1', fromLocation: '', toLocation: '', travelDate: '', airlineCompany: '', ticketPnr: '' },
+        { id: 'leg-2', fromLocation: '', toLocation: '', travelDate: '', airlineCompany: '', ticketPnr: '' }
+      ];
+      tripType = 'one_way';
+      amount = '';
+      expectedSupplierCost = 0;
+      isInhouse = true;
+      supplierId = null;
+      paymentMethod = 'credit';
+      bankId = null;
+      bankName = '';
+      passengers = [{ prefix: 'Mr.', passengerName: '', ticketPnr: '' }];
+      validationErrors = {};
+      errorMsg = '';
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err: any) {
       if (err.status === 422 || err.status === 400) {
         if (err.errors) {
@@ -917,9 +943,10 @@
                 type="number"
                 step="0.001"
                 min="0"
+                placeholder="0.000"
                 class="pl-11 font-mono"
                 value={amount}
-                oninput={(e) => amount = Number(e.currentTarget.value) || 0}
+                oninput={(e) => amount = e.currentTarget.value === '' ? '' : Number(e.currentTarget.value)}
                 required
               />
             </div>
@@ -979,7 +1006,7 @@
             </div>
             <div class="flex items-center justify-between">
               <span class="text-muted-foreground">Selling Price:</span>
-              <span class="font-mono font-semibold text-foreground">BHD {amount.toFixed(3)}</span>
+              <span class="font-mono font-semibold text-foreground">BHD {(Number(amount) || 0).toFixed(3)}</span>
             </div>
             {#if !isInhouse}
               <div class="flex items-center justify-between">
