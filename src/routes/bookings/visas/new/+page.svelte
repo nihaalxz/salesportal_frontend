@@ -33,6 +33,7 @@
   import { onMount } from 'svelte';
 
   interface ApplicantInput {
+    _key?: number;
     prefix: string;
     fName: string;
     lName: string;
@@ -48,6 +49,37 @@
     passportFile?: File | null;
     bankStatementFile?: File | null;
     iqamaHotelFile?: File | null;
+  }
+
+  let applicantKeyCounter = 0;
+  function createEmptyApplicant(): ApplicantInput {
+    return {
+      _key: ++applicantKeyCounter,
+      prefix: 'Mr.',
+      fName: '',
+      lName: '',
+      dob: '',
+      nationality: '',
+      contactNo: '',
+      emailId: '',
+      passportNo: '',
+      iqamaHotelNo: '',
+      amount: '',
+      expectedSupplierCost: 0,
+      isInhouse: true,
+      passportFile: null,
+      bankStatementFile: null,
+      iqamaHotelFile: null
+    };
+  }
+
+  function clearFileInputs() {
+    if (typeof document !== 'undefined') {
+      const fileInputs = document.querySelectorAll<HTMLInputElement>('input[type="file"]');
+      fileInputs.forEach(input => {
+        input.value = '';
+      });
+    }
   }
 
   // Form State
@@ -75,25 +107,7 @@
 
 
   // Dynamic applicants state
-  let applicants = $state<ApplicantInput[]>([
-    {
-      prefix: 'Mr.',
-      fName: '',
-      lName: '',
-      dob: '',
-      nationality: '',
-      contactNo: '',
-      emailId: '',
-      passportNo: '',
-      iqamaHotelNo: '',
-      amount: '',
-      expectedSupplierCost: 0,
-      isInhouse: true,
-      passportFile: null,
-      bankStatementFile: null,
-      iqamaHotelFile: null
-    }
-  ]);
+  let applicants = $state<ApplicantInput[]>([createEmptyApplicant()]);
 
   // Interactive UI state (Dropdown list)
   let headsList = $state<HeadLookup[]>([]);
@@ -180,23 +194,7 @@
   }
 
   function addApplicant() {
-    applicants = [...applicants, {
-      prefix: 'Mr.',
-      fName: '',
-      lName: '',
-      dob: '',
-      nationality: '',
-      contactNo: '',
-      emailId: '',
-      passportNo: '',
-      iqamaHotelNo: '',
-      amount: '',
-      expectedSupplierCost: 0,
-      isInhouse: true,
-      passportFile: null,
-      bankStatementFile: null,
-      iqamaHotelFile: null
-    }];
+    applicants = [...applicants, createEmptyApplicant()];
   }
 
   function removeApplicant(index: number) {
@@ -327,25 +325,8 @@
       bankId = null;
       bankName = '';
       supplierId = null;
-      applicants = [
-        {
-          prefix: 'Mr.',
-          fName: '',
-          lName: '',
-          dob: '',
-          nationality: '',
-          contactNo: '',
-          emailId: '',
-          passportNo: '',
-          iqamaHotelNo: '',
-          amount: '',
-          expectedSupplierCost: 0,
-          isInhouse: true,
-          passportFile: null,
-          bankStatementFile: null,
-          iqamaHotelFile: null
-        }
-      ];
+      applicants = [createEmptyApplicant()];
+      clearFileInputs();
       validationErrors = {};
       errorMsg = '';
       if (typeof window !== 'undefined') {
@@ -553,7 +534,7 @@
           </Button>
         </CardHeader>
         <CardContent class="space-y-6 divide-y divide-border">
-          {#each applicants as applicant, index}
+          {#each applicants as applicant, index (applicant._key)}
             <div class="pt-4 first:pt-0 space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-primary">Applicant #{index + 1}</span>
