@@ -457,7 +457,6 @@
                 <tr class="border-b border-border bg-muted/20 text-xs text-muted-foreground uppercase tracking-wider">
                   <th class="py-3 px-4 font-semibold">Name / Contact</th>
                   <th class="py-3 px-4 font-semibold">Passport & Nationality</th>
-                  <th class="py-3 px-4 font-semibold">In-house</th>
                   <th class="py-3 px-4 font-semibold text-right">Selling Price</th>
                   <th class="py-3 px-4 font-semibold text-right">Supplier Cost</th>
                 </tr>
@@ -541,18 +540,6 @@
                           </div>
                         {/if}
                       </td>
-                      <td class="py-3.5 px-4 align-top">
-                        {#if applicant.isInhouse}
-                          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Yes</span>
-                        {:else}
-                          <div class="flex flex-col gap-0.5">
-                            <span class="inline-flex items-center w-max px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">No</span>
-                            {#if booking.supplierId || booking.supplierName}
-                              <span class="text-xs text-muted-foreground font-medium">{getSupplierName(booking.supplierId, booking.supplierName)}</span>
-                            {/if}
-                          </div>
-                        {/if}
-                      </td>
                       <td class="py-3.5 px-4 align-top text-right font-semibold font-mono text-foreground">
                         <MoneyDisplay amount={applicant.payableAmount} />
                       </td>
@@ -567,7 +554,7 @@
                   {/each}
                 {:else}
                   <tr>
-                    <td colspan="5" class="py-4 text-center text-muted-foreground italic">No applicants found.</td>
+                    <td colspan="4" class="py-4 text-center text-muted-foreground italic">No applicants found.</td>
                   </tr>
                 {/if}
               </tbody>
