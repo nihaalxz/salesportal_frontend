@@ -300,7 +300,6 @@
                   <span>Sales Return Performed</span>
                 </span>
               {/if}
-              <StatusBadge status={booking.paymentStatus} />
               <StatusBadge status={booking.processingStatus} />
             </div>
           </div>
@@ -349,13 +348,6 @@
             </div>
           {/if}
 
-          {#if booking.supplierId || booking.supplierName}
-            <div>
-              <span class="text-xs text-muted-foreground block mb-0.5">Supplier Details</span>
-              <span class="font-medium text-foreground">{getSupplierName(booking.supplierId, booking.supplierName)} (ID: {booking.supplierId})</span>
-            </div>
-          {/if}
-
           {#if govtVisaTrackingId}
             <div>
               <span class="text-xs text-muted-foreground block mb-0.5">Govt Visa Tracking ID</span>
@@ -385,10 +377,6 @@
                     <Eye class="h-3.5 w-3.5" />
                     <span>View</span>
                   </Button>
-                  <Button size="sm" variant="outline" href={getFileUrl(booking.paymentProof)} download class="gap-1">
-                    <Download class="h-3.5 w-3.5" />
-                    <span>Download</span>
-                  </Button>
                 </div>
               </div>
             {/if}
@@ -397,16 +385,12 @@
               <div class="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 p-3 rounded">
                 <div>
                   <span class="font-medium text-emerald-600 dark:text-emerald-400 block">Visa Document</span>
-                  <span class="text-xs text-muted-foreground">Download the approved visa copy</span>
+                  <span class="text-xs text-muted-foreground">Approved visa copy</span>
                 </div>
                 <div class="flex gap-2">
                   <Button size="sm" variant="outline" href={getFileUrl(booking.visaDocument)} target="_blank" class="gap-1">
                     <Eye class="h-3.5 w-3.5" />
                     <span>View</span>
-                  </Button>
-                  <Button size="sm" variant="outline" href={getFileUrl(booking.visaDocument)} download class="gap-1">
-                    <Download class="h-3.5 w-3.5" />
-                    <span>Download</span>
                   </Button>
                 </div>
               </div>
@@ -423,16 +407,12 @@
               <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 p-3 rounded">
                 <div>
                   <span class="font-medium text-red-600 dark:text-red-400 block">Rejection Document</span>
-                  <span class="text-xs text-muted-foreground">Download the uploaded rejection proof document</span>
+                  <span class="text-xs text-muted-foreground">Uploaded rejection proof document</span>
                 </div>
                 <div class="flex gap-2">
                   <Button size="sm" variant="outline" href={getFileUrl(booking.rejectionDocument)} target="_blank" class="gap-1">
                     <Eye class="h-3.5 w-3.5" />
                     <span>View</span>
-                  </Button>
-                  <Button size="sm" variant="outline" href={getFileUrl(booking.rejectionDocument)} download class="gap-1">
-                    <Download class="h-3.5 w-3.5" />
-                    <span>Download</span>
                   </Button>
                 </div>
               </div>
@@ -486,7 +466,7 @@
                 {#if booking.applicants && booking.applicants.length > 0}
                   {#each booking.applicants as applicant}
                     <tr class="hover:bg-muted/10 transition-colors">
-                      <td class="py-3 px-4">
+                      <td class="py-3.5 px-4 align-top">
                         <span class="font-medium text-foreground block">
                           {#if applicant.fName || applicant.lName}
                             {applicant.prefix ? `${applicant.prefix} ` : ''}{applicant.fName || ''} {applicant.lName || ''}
@@ -496,101 +476,72 @@
                         </span>
                         <span class="text-xs text-muted-foreground block">{applicant.emailId || '-'} | {applicant.contactNo || '-'}</span>
                       </td>
-                      <td class="py-3 px-4">
+                      <td class="py-3.5 px-4 align-top">
                         <span class="font-medium text-foreground block">{applicant.passportNo || '-'}</span>
                         <span class="text-xs text-muted-foreground block mb-1">
                           Nationality: <span class="font-semibold text-foreground">{applicant.nationality || '-'}</span> &middot; DOB: {applicant.dob ? new Date(applicant.dob).toLocaleDateString() : '-'}
                         </span>
                         {#if (applicant as any).govtFeeReference || (applicant as any).visaAppId || (applicant as any).govt_fee_reference}
-                          <div class="mt-1 mb-1">
+                          <div class="mt-1 mb-1.5">
                             <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-300/60 dark:border-emerald-800/60 font-mono">
                               Govt Visa Tracking ID: {(applicant as any).govtFeeReference || (applicant as any).visaAppId || (applicant as any).govt_fee_reference}
                             </span>
                           </div>
                         {/if}
-                        {#if (applicant as any).passportCopy}
-                          <div class="flex items-center gap-2 mt-1">
-                            <a
-                              href={getFileUrl((applicant as any).passportCopy)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                              title="View Passport Copy"
-                            >
-                              <Eye class="h-3 w-3" />
-                              <span>View</span>
-                            </a>
-                            <a
-                              href={getFileUrl((applicant as any).passportCopy)}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                              title="Download Passport Copy"
-                            >
-                              <Download class="h-3 w-3" />
-                              <span>Download</span>
-                            </a>
-                          </div>
-                        {/if}
-                        {#if (applicant as any).iqamaHotelNo}
-                          <div class="flex items-center gap-2 mt-1 text-xs">
-                            <span class="text-muted-foreground font-mono bg-muted/40 px-1.5 py-0.5 rounded text-[11px] truncate max-w-[150px]">{(applicant as any).iqamaHotelNo}</span>
-                            {#if isDocFilePath((applicant as any).iqamaHotelNo)}
+                        {#if (applicant as any).passportCopy || (applicant as any).iqamaHotelNo || (applicant as any).bankDoc}
+                          <div class="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-border/40">
+                            {#if (applicant as any).passportCopy}
                               <a
-                                href={getFileUrl((applicant as any).iqamaHotelNo)}
+                                href={getFileUrl((applicant as any).passportCopy)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                                title="View Iqama / Hotel Document"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors"
+                                title="View Passport Copy"
                               >
                                 <Eye class="h-3 w-3" />
-                                <span>View</span>
-                              </a>
-                              <a
-                                href={getFileUrl((applicant as any).iqamaHotelNo)}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                                title="Download Iqama / Hotel Document"
-                              >
-                                <Download class="h-3 w-3" />
-                                <span>Download</span>
+                                <span>Passport</span>
                               </a>
                             {/if}
-                          </div>
-                        {/if}
-                        {#if (applicant as any).bankDoc}
-                          <div class="flex items-center gap-2 mt-1 text-xs">
-                            <span class="text-muted-foreground font-mono bg-muted/40 px-1.5 py-0.5 rounded text-[11px] truncate max-w-[150px]">Bank Document</span>
-                            {#if isDocFilePath((applicant as any).bankDoc)}
-                              <a
-                                href={getFileUrl((applicant as any).bankDoc)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                                title="View Bank Document"
-                              >
-                                <Eye class="h-3 w-3" />
-                                <span>View</span>
-                              </a>
-                              <a
-                                href={getFileUrl((applicant as any).bankDoc)}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                                title="Download Bank Document"
-                              >
-                                <Download class="h-3 w-3" />
-                                <span>Download</span>
-                              </a>
+                            {#if (applicant as any).iqamaHotelNo}
+                              {#if isDocFilePath((applicant as any).iqamaHotelNo)}
+                                <a
+                                  href={getFileUrl((applicant as any).iqamaHotelNo)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground text-xs font-medium transition-colors"
+                                  title="View Iqama / Hotel Document"
+                                >
+                                  <Eye class="h-3 w-3" />
+                                  <span>Iqama / Hotel</span>
+                                </a>
+                              {:else}
+                                <span class="text-xs text-muted-foreground font-mono bg-muted/40 px-1.5 py-0.5 rounded">
+                                  Iqama: {(applicant as any).iqamaHotelNo}
+                                </span>
+                              {/if}
+                            {/if}
+                            {#if (applicant as any).bankDoc}
+                              {#if isDocFilePath((applicant as any).bankDoc)}
+                                <a
+                                  href={getFileUrl((applicant as any).bankDoc)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground text-xs font-medium transition-colors"
+                                  title="View Bank Document"
+                                >
+                                  <Eye class="h-3 w-3" />
+                                  <span>Bank Document</span>
+                                </a>
+                              {:else}
+                                <span class="text-xs text-muted-foreground font-mono bg-muted/40 px-1.5 py-0.5 rounded">
+                                  Bank Document
+                                </span>
+                              {/if}
                             {/if}
                           </div>
                         {/if}
                       </td>
-                      <td class="py-3 px-4">
+                      <td class="py-3.5 px-4 align-top">
                         {#if applicant.isInhouse}
                           <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Yes</span>
                         {:else}
@@ -602,10 +553,10 @@
                           </div>
                         {/if}
                       </td>
-                      <td class="py-3 px-4 text-right font-semibold font-mono text-foreground">
+                      <td class="py-3.5 px-4 align-top text-right font-semibold font-mono text-foreground">
                         <MoneyDisplay amount={applicant.payableAmount} />
                       </td>
-                      <td class="py-3 px-4 text-right font-medium font-mono text-muted-foreground">
+                      <td class="py-3.5 px-4 align-top text-right font-medium font-mono text-muted-foreground">
                         {#if applicant.isInhouse}
                           <span class="text-muted-foreground italic">-</span>
                         {:else}
@@ -701,10 +652,6 @@
         <CardContent class="space-y-3.5 text-sm">
           {@const pMethod = (booking as any)?.paymentMethod || booking.applicants?.[0]?.paymentMethod || 'cash'}
           {@const bName = getBankName((booking as any)?.bankId || booking.applicants?.[0]?.bankId, (booking as any)?.bankName || booking.applicants?.[0]?.bankName)}
-          <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Payment Method</span>
-            <span class="font-semibold text-foreground capitalize">{pMethod}</span>
-          </div>
 
           {#if pMethod.toLowerCase() === 'online'}
             <div class="flex items-center justify-between">

@@ -152,7 +152,6 @@
                   <span>Sales Return Performed</span>
                 </span>
               {/if}
-              <StatusBadge status={booking.paymentStatus} />
               <StatusBadge status={booking.processingStatus} />
             </div>
           </div>
@@ -191,13 +190,6 @@
             <div>
               <span class="text-xs text-muted-foreground block mb-0.5">Care Of</span>
               <span class="font-medium text-foreground">{booking.careOf}</span>
-            </div>
-          {/if}
-
-          {#if booking.supplierId || booking.supplierName}
-            <div>
-              <span class="text-xs text-muted-foreground block mb-0.5">Supplier Details</span>
-              <span class="font-medium text-foreground">{getSupplierName(booking.supplierId, booking.supplierName || 'External Supplier')} (ID: {booking.supplierId})</span>
             </div>
           {/if}
 
@@ -246,10 +238,6 @@
                 <Button size="sm" variant="outline" href={getFileUrl(booking.paymentProof)} target="_blank" class="gap-1">
                   <Eye class="h-3.5 w-3.5" />
                   <span>View</span>
-                </Button>
-                <Button size="sm" variant="outline" href={getFileUrl(booking.paymentProof)} download class="gap-1">
-                  <Download class="h-3.5 w-3.5" />
-                  <span>Download</span>
                 </Button>
               </div>
             </div>
@@ -362,10 +350,6 @@
         <CardContent class="space-y-3.5 text-sm">
           {@const pMethod = (booking as any)?.paymentMethod || 'cash'}
           {@const bName = getBankName((booking as any)?.bankId, (booking as any)?.bankName)}
-          <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Payment Method</span>
-            <span class="font-semibold text-foreground capitalize">{pMethod}</span>
-          </div>
 
           {#if pMethod.toLowerCase() === 'online'}
             <div class="flex items-center justify-between">
