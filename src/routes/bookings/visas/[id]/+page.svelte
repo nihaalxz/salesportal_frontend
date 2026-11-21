@@ -219,6 +219,17 @@
     const found = visaPackages.find(p => p.id === packId);
     return found ? found.name : `Package #${packId}`;
   }
+
+  function maskTrackingId(id: string | number | null | undefined): string {
+    if (!id) return '';
+    const str = String(id).trim();
+    if (!str) return '';
+    if (str.includes(',')) {
+      return str.split(',').map(s => maskTrackingId(s.trim())).join(', ');
+    }
+    if (str.length <= 3) return '***';
+    return str.slice(0, -3) + '***';
+  }
 </script>
 
 <PageHeader title={booking ? `Visa Application ${booking.documentNumber}` : 'Visa Application Details'} description="Review visa package request, applicant files, and payment status.">
@@ -352,7 +363,7 @@
             <div>
               <span class="text-xs text-muted-foreground block mb-0.5">Govt Visa Tracking ID</span>
               <span class="font-mono font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 px-2.5 py-1 rounded-md border border-emerald-300/60 dark:border-emerald-800/60 inline-block text-xs">
-                {govtVisaTrackingId}
+                {maskTrackingId(govtVisaTrackingId)}
               </span>
             </div>
           {/if}
@@ -483,7 +494,7 @@
                         {#if (applicant as any).govtFeeReference || (applicant as any).visaAppId || (applicant as any).govt_fee_reference}
                           <div class="mt-1 mb-1.5">
                             <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-300/60 dark:border-emerald-800/60 font-mono">
-                              Govt Visa Tracking ID: {(applicant as any).govtFeeReference || (applicant as any).visaAppId || (applicant as any).govt_fee_reference}
+                              Govt Visa Tracking ID: {maskTrackingId((applicant as any).govtFeeReference || (applicant as any).visaAppId || (applicant as any).govt_fee_reference)}
                             </span>
                           </div>
                         {/if}
